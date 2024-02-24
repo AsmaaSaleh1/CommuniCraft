@@ -6,6 +6,7 @@ const cors = require('cors')
 // dotenv.config({path:'./.env'})
 const indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users');
+const materialRouter = require('./routes/material');
 const app = express();
 
 app.use(cors({origin:"*"}));
@@ -17,4 +18,5 @@ app.use(cookieParser());
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+app.use('/material',materialRouter);
 module.exports = app;
