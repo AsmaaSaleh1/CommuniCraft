@@ -254,4 +254,64 @@ router.route('/edit-user/:userID').put(async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
+/**
+ * @openapi
+ * /api/user/get-user/{userID}:
+ *   get:
+ *     tags:
+ *       - User Controller
+ *     summary: Get user details
+ *     parameters:
+ *       - in: path
+ *         name: userID
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the user to retrieve details for.
+ *     responses:
+ *       201:
+ *         description: Successful operation
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 userName:
+ *                   type: string
+ *                   description: The username of the user.
+ *                 email:
+ *                   type: string
+ *                   format: email
+ *                   description: The email address of the user.
+ *                 interests:
+ *                   type: string
+ *                   description: The interests of the user.
+ *                 location:
+ *                   type: string
+ *                   description: The location of the user.
+ *       404:
+ *         description: Not Found - User not found.
+ *       500:
+ *         description: Internal server error.
+ */
+router.get('/get-user/:userID', async (req, res) => {
+  try {
+    const userID = req.params.userID;
+
+    // Get database connection
+    const connection = await db.getConnection();
+
+    // Fetch user details from the database using userID
+    const [user] = await connection.execute('SELECT userName, email, interests, location FROM user WHERE userID = ?', [userID]);
+    if (user.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(201).json(user[0]);
+
+  } catch (err) {
+    console.error("Error getting user details:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
 module.exports = router;
