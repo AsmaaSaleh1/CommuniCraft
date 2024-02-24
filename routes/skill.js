@@ -136,5 +136,60 @@ router.route('/edit-skill/:skillID').put(async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 });
+/**
+ * @openapi
+ * /api/skill/get-skills/{userID}:
+ *   get:
+ *     tags:
+ *       - Skill Controller
+ *     summary: Get skills for a specific user
+ *     parameters:
+ *       - in: path
+ *         name: userID
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the user to retrieve skills for.
+ *     responses:
+ *       201:
+ *         description: Successful operation
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   skillID:
+ *                     type: integer
+ *                     description: The ID of the skill.
+ *                   skillName:
+ *                     type: string
+ *                     description: The name of the skill.
+ *       404:
+ *         description: Not Found - User not found or no skills found for the user.
+ *       500:
+ *         description: Internal server error.
+ */
+router.route('/get-skills/:userID').get(async (req, res) => {
+    try {
+        const userID = req.params.userID;
+
+        // Get database connection
+        const connection = await db.getConnection();
+
+        // Fetch skills for the specified user
+        const [skills] = await connection.execute('SELECT * FROM skill WHERE userID = ?', [userID]);
+        if (skills.length === 0) {
+            return res.status(404).json({ message: "No skills found for the user" });
+        }
+
+        res.status(201).json(skills);
+
+    } catch (err) {
+        console.error("Error getting skills:", err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
 
 module.exports = router;
