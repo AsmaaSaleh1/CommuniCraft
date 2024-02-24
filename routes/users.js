@@ -192,7 +192,7 @@ router.route('/login').post(async (req, res) => {
  *                 description: The new username for the user.
  *               interests:
  *                 type: string
- *                 description: The new interests for the user.
+ *                 description: The new interests in the user.
  *               location:
  *                 type: string
  *                 description: The new location for the user.
