@@ -203,4 +203,56 @@ router.route('/get-tools/:userID').get(async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 });
+/**
+ * @openapi
+ * /api/tool/delete-tool/{userID}/{toolID}:
+ *   delete:
+ *     tags:
+ *       - Tool Controller
+ *     summary: Delete a specific tool for a user
+ *     parameters:
+ *       - in: path
+ *         name: userID
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the user who owns the tool.
+ *       - in: path
+ *         name: toolID
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the tool to delete.
+ *     responses:
+ *       204:
+ *         description: Tool deleted successfully
+ *       404:
+ *         description: Not Found - Tool not found or not owned by the user.
+ *       500:
+ *         description: Internal server error.
+ */
+router.delete('/delete-tool/:userID/:toolID', async (req, res) => {
+    try {
+        const userID = req.params.userID;
+        const toolID = req.params.toolID;
+
+        // Get database connection
+        const connection = await db.getConnection();
+
+        // Check if the tool exists and is owned by the user
+        const [tool] = await connection.execute('SELECT * FROM tool WHERE toolID = ? AND userID = ?', [toolID, userID]);
+        if (tool.length === 0) {
+            return res.status(404).json({ message: "Tool not found or not owned by the user" });
+        }
+
+        // Delete the tool
+        await connection.execute('DELETE FROM tool WHERE toolID = ?', [toolID]);
+
+        res.status(204).end(); // No content in response
+
+    } catch (err) {
+        console.error("Error deleting tool:", err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
 module.exports = router;
