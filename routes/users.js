@@ -96,7 +96,6 @@ router.post('/', async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
-
 /**
  * @openapi
  * /api/user/login:
@@ -164,6 +163,94 @@ router.route('/login').post(async (req, res) => {
 
   } catch (err) {
     console.error("Error logging in user:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+/**
+ * @openapi
+ * /api/user/edit-user/{userID}:
+ *   put:
+ *     tags:
+ *       - User Controller
+ *     summary: Edit user information
+ *     parameters:
+ *       - in: path
+ *         name: userID
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the user to edit.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userName:
+ *                 type: string
+ *                 description: The new username for the user.
+ *               interests:
+ *                 type: string
+ *                 description: The new interests for the user.
+ *               location:
+ *                 type: string
+ *                 description: The new location for the user.
+ *     responses:
+ *       201:
+ *         description: User information updated successfully
+ *       400:
+ *         description: Bad Request - At least one of userName, interests, or location must be provided.
+ *       404:
+ *         description: Not Found - User not found.
+ *       500:
+ *         description: Internal server error.
+ */
+router.route('/edit-user/:userID').put(async (req, res) => {
+  try {
+    const { userName, interests, location } = req.body;
+    const userID = req.params.userID;
+
+    // Check if at least one field is provided
+    if (!userName && !interests && !location) {
+      return res.status(400).json({ message: "At least one of userName, interests, or location must be provided" });
+    }
+
+    // Get database connection
+    const connection = await db.getConnection();
+
+    // Fetch user from the database using userID
+    const [user] = await connection.execute('SELECT * FROM user WHERE userID = ?', [userID]);
+    if (user.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    let updateFields = [];
+    let queryParams = [];
+
+    // Construct the SQL query based on the provided fields
+    if (userName) {
+      updateFields.push('userName = ?');
+      queryParams.push(userName);
+    }
+    if (interests) {
+      updateFields.push('interests = ?');
+      queryParams.push(interests);
+    }
+    if (location) {
+      updateFields.push('location = ?');
+      queryParams.push(location);
+    }
+
+    // Update user information
+    const updateQuery = `UPDATE user SET ${updateFields.join(', ')} WHERE userID = ?`;
+    const updateParams = [...queryParams, userID];
+    await connection.execute(updateQuery, updateParams);
+
+    res.status(201).json({ message: "User information updated successfully" });
+
+  } catch (err) {
+    console.error("Error editing user information:", err);
     res.status(500).json({ message: "Internal server error" });
   }
 });
