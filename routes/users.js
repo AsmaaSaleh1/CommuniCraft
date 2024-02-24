@@ -6,7 +6,55 @@ const bcrypt = require('bcrypt');
 // Regular expression for validating email format
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/* POST user signup. */
+/**
+ * @openapi
+ * /user/signup:
+ *   post:
+ *     tags:
+ *       - User Controller
+ *     summary: Sign up as a new user
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userName
+ *               - email
+ *               - password
+ *               - interests
+ *               - location
+ *             properties:
+ *               userName:
+ *                 type: string
+ *                 description: The username of the user.
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: The email address of the user.
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 description: The password of the user.
+ *               interests:
+ *                 type: string
+ *                 description: The interests of the user.
+ *               location:
+ *                 type: string
+ *                 description: The location of the user.
+ *     responses:
+ *       201:
+ *         description: User signed up successfully
+ *       400:
+ *         description: Bad Request - Missing required fields or invalid data format.
+ *       401:
+ *         description: Unauthorized - Invalid email format.
+ *       403:
+ *         description: Email already exists.
+ *       500:
+ *         description: Internal server error.
+ */
 router.post('/', async (req, res) => {
   try {
     const { userName, email, password, interests, location } = req.body;
@@ -42,12 +90,50 @@ router.post('/', async (req, res) => {
     // Commit transaction
     await connection.commit();
 
-    res.status(200).json({ message: "User signed up successfully" });
+    res.status(201).json({ message: "User signed up successfully" });
   } catch (err) {
     console.error("Error signing up user:", err);
     res.status(500).json({ message: "Internal server error" });
   }
 });
+
+/**
+ * @openapi
+ * /user/login:
+ *   post:
+ *     tags:
+ *       - User Controller
+ *     summary: Login as a user
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: The email address of the user.
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 description: The password of the user.
+ *     responses:
+ *       201:
+ *         description: Login successful
+ *       400:
+ *         description: Bad Request - Missing required fields or invalid data format.
+ *       401:
+ *         description: Unauthorized - Invalid email or password.
+ *       404:
+ *         description: User not found - The provided email does not exist.
+ *       500:
+ *         description: Internal server error.
+ */
 router.route('/login').post(async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -72,7 +158,9 @@ router.route('/login').post(async (req, res) => {
     }
 
     // Password is correct
-    res.status(200).json({ message: "Login successful", user: user[0] });
+    const userWithoutPassword = { ...user[0] };
+    delete userWithoutPassword.password;
+    res.status(201).json({ message: "Login successful", user: userWithoutPassword });
 
   } catch (err) {
     console.error("Error logging in user:", err);
