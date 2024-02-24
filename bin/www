@@ -7,6 +7,7 @@
 const app = require('../app');
 const debug = require('debug')('CommuniCraft:server');
 const http = require('http');
+const swaggerDocs = require("../swagger");
 
 /**
  * Get port from environment and store in Express.
@@ -86,5 +87,6 @@ function onListening() {
   const bind = typeof addr === 'string'
     ? 'pipe ' + addr
     : 'port ' + addr.port;
+  swaggerDocs(app, port)
   debug('Listening on ' + bind);
 }
