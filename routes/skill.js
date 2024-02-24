@@ -191,5 +191,56 @@ router.route('/get-skills/:userID').get(async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 });
+/**
+ * @openapi
+ * /api/skill/delete-skill/{userID}/{skillID}:
+ *   delete:
+ *     tags:
+ *       - Skill Controller
+ *     summary: Delete a specific skill for a user
+ *     parameters:
+ *       - in: path
+ *         name: userID
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the user who owns the skill.
+ *       - in: path
+ *         name: skillID
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the skill to delete.
+ *     responses:
+ *       204:
+ *         description: Skill deleted successfully
+ *       404:
+ *         description: Not Found - Skill not found or not owned by the user.
+ *       500:
+ *         description: Internal server error.
+ */
+router.delete('/delete-skill/:userID/:skillID', async (req, res) => {
+    try {
+        const userID = req.params.userID;
+        const skillID = req.params.skillID;
 
+        // Get database connection
+        const connection = await db.getConnection();
+
+        // Check if the skill exists and is owned by the user
+        const [skill] = await connection.execute('SELECT * FROM skill WHERE skillID = ? AND userID = ?', [skillID, userID]);
+        if (skill.length === 0) {
+            return res.status(404).json({ message: "Skill not found or not owned by the user" });
+        }
+
+        // Delete the skill
+        await connection.execute('DELETE FROM skill WHERE skillID = ?', [skillID]);
+
+        res.status(204).end(); // No content in response
+
+    } catch (err) {
+        console.error("Error deleting skill:", err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
 module.exports = router;
