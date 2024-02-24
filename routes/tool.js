@@ -145,4 +145,62 @@ router.route('/edit-tool/:toolID').put(async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 });
+/**
+ * @openapi
+ * /api/tool/get-tools/{userID}:
+ *   get:
+ *     tags:
+ *       - Tool Controller
+ *     summary: Get tools for a specific user
+ *     parameters:
+ *       - in: path
+ *         name: userID
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the user to retrieve tools for.
+ *     responses:
+ *       201:
+ *         description: Successful operation
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   toolID:
+ *                     type: integer
+ *                     description: The ID of the tool.
+ *                   toolName:
+ *                     type: string
+ *                     description: The name of the tool.
+ *                   quantity:
+ *                     type: integer
+ *                     description: The quantity of the tool.
+ *       404:
+ *         description: Not Found - User not found or no tools found for the user.
+ *       500:
+ *         description: Internal server error.
+ */
+router.route('/get-tools/:userID').get(async (req, res) => {
+    try {
+        const userID = req.params.userID;
+
+        // Get database connection
+        const connection = await db.getConnection();
+
+        // Fetch tools for the specified user
+        const [tools] = await connection.execute('SELECT * FROM tool WHERE userID = ?', [userID]);
+        if (tools.length === 0) {
+            return res.status(404).json({ message: "No tools found for the user" });
+        }
+
+        res.status(201).json(tools);
+
+    } catch (err) {
+        console.error("Error getting tools:", err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
 module.exports = router;
