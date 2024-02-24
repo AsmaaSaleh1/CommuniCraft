@@ -8,7 +8,7 @@ const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
  * @openapi
- * /user/signup:
+ * /api/user/signup:
  *   post:
  *     tags:
  *       - User Controller
@@ -99,7 +99,7 @@ router.post('/', async (req, res) => {
 
 /**
  * @openapi
- * /user/login:
+ * /api/user/login:
  *   post:
  *     tags:
  *       - User Controller
