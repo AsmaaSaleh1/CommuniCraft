@@ -203,4 +203,56 @@ router.route('/get-materials/:userID').get(async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 });
+/**
+ * @openapi
+ * /api/material/delete-material/{userID}/{materialID}:
+ *   delete:
+ *     tags:
+ *       - Material Controller
+ *     summary: Delete a specific material for a user
+ *     parameters:
+ *       - in: path
+ *         name: userID
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the user who owns the material.
+ *       - in: path
+ *         name: materialID
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the material to delete.
+ *     responses:
+ *       204:
+ *         description: Material deleted successfully
+ *       404:
+ *         description: Not Found - Material not found or not owned by the user.
+ *       500:
+ *         description: Internal server error.
+ */
+router.delete('/delete-material/:userID/:materialID', async (req, res) => {
+    try {
+        const userID = req.params.userID;
+        const materialID = req.params.materialID;
+
+        // Get database connection
+        const connection = await db.getConnection();
+
+        // Check if the material exists and is owned by the user
+        const [material] = await connection.execute('SELECT * FROM material WHERE materialID = ? AND userID = ?', [materialID, userID]);
+        if (material.length === 0) {
+            return res.status(404).json({ message: "Material not found or not owned by the user" });
+        }
+
+        // Delete the material
+        await connection.execute('DELETE FROM material WHERE materialID = ?', [materialID]);
+
+        res.status(204).end(); // No content in response
+
+    } catch (err) {
+        console.error("Error deleting material:", err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
 module.exports = router;
