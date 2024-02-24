@@ -314,4 +314,65 @@ router.get('/get-user/:userID', async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
+/**
+ * @openapi
+ * /api/user/delete-user/{userID}:
+ *   delete:
+ *     tags:
+ *       - User Controller
+ *     summary: Delete a user and all related tools, materials, and skills
+ *     parameters:
+ *       - in: path
+ *         name: userID
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the user to delete.
+ *     responses:
+ *       204:
+ *         description: User and related data deleted successfully
+ *       404:
+ *         description: Not Found - User not found.
+ *       500:
+ *         description: Internal server error.
+ */
+router.delete('/delete-user/:userID', async (req, res) => {
+  try {
+    const userID = req.params.userID;
+
+    // Get database connection
+    const connection = await db.getConnection();
+    await connection.beginTransaction();
+
+    // Check if the user exists
+    const [user] = await connection.execute('SELECT * FROM user WHERE userID = ?', [userID]);
+    if (user.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    try {
+      // Delete related tools
+      await connection.execute('DELETE FROM tool WHERE userID = ?', [userID]);
+
+      // Delete related materials
+      await connection.execute('DELETE FROM material WHERE userID = ?', [userID]);
+
+      // Delete related skills
+      await connection.execute('DELETE FROM skill WHERE userID = ?', [userID]);
+
+      // Delete the user
+      await connection.execute('DELETE FROM user WHERE userID = ?', [userID]);
+
+      await connection.commit();
+      res.status(204).end(); // No content in response
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    }
+  } catch (err) {
+    console.error("Error deleting user:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
 module.exports = router;
