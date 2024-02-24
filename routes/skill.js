@@ -136,6 +136,7 @@ router.route('/edit-skill/:skillID').put(async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 });
+
 /**
  * @openapi
  * /api/skill/get-skills/{userID}:
@@ -191,6 +192,7 @@ router.route('/get-skills/:userID').get(async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 });
+
 /**
  * @openapi
  * /api/skill/delete-skill/{userID}/{skillID}:

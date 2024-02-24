@@ -70,6 +70,7 @@ router.route('/add-material/:userID').post(async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 });
+
 /**
  * @openapi
  * /api/material/edit-material/{materialID}:
@@ -145,6 +146,7 @@ router.route('/edit-material/:materialID').put(async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 });
+
 /**
  * @openapi
  * /api/material/get-materials/{userID}:
@@ -203,6 +205,7 @@ router.route('/get-materials/:userID').get(async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 });
+
 /**
  * @openapi
  * /api/material/delete-material/{userID}/{materialID}:

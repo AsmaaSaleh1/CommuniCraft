@@ -51,11 +51,11 @@ const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  *       401:
  *         description: Unauthorized - Invalid email format.
  *       403:
- *         description: Email already exists.
+ *         description: Forbidden - Email already exists.
  *       500:
  *         description: Internal server error.
  */
-router.post('/', async (req, res) => {
+router.post('/signup', async (req, res) => {
   try {
     const { userName, email, password, interests, location } = req.body;
     // Check if required fields are provided
@@ -96,6 +96,7 @@ router.post('/', async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
+
 /**
  * @openapi
  * /api/user/login:
@@ -122,18 +123,18 @@ router.post('/', async (req, res) => {
  *                 format: password
  *                 description: The password of the user.
  *     responses:
- *       201:
+ *       200:
  *         description: Login successful
  *       400:
  *         description: Bad Request - Missing required fields or invalid data format.
  *       401:
  *         description: Unauthorized - Invalid email or password.
  *       404:
- *         description: User not found - The provided email does not exist.
+ *         description: Not Found - User not found.
  *       500:
  *         description: Internal server error.
  */
-router.route('/login').post(async (req, res) => {
+router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     // Check if required fields are provided
@@ -159,13 +160,14 @@ router.route('/login').post(async (req, res) => {
     // Password is correct
     const userWithoutPassword = { ...user[0] };
     delete userWithoutPassword.password;
-    res.status(201).json({ message: "Login successful", user: userWithoutPassword });
+    res.status(200).json({ message: "Login successful", user: userWithoutPassword });
 
   } catch (err) {
     console.error("Error logging in user:", err);
     res.status(500).json({ message: "Internal server error" });
   }
 });
+
 /**
  * @openapi
  * /api/user/edit-user/{userID}:
@@ -178,7 +180,7 @@ router.route('/login').post(async (req, res) => {
  *         name: userID
  *         required: true
  *         schema:
- *           type: string
+ *           type: integer
  *         description: The ID of the user to edit.
  *     requestBody:
  *       required: true
@@ -197,7 +199,7 @@ router.route('/login').post(async (req, res) => {
  *                 type: string
  *                 description: The new location for the user.
  *     responses:
- *       201:
+ *       200:
  *         description: User information updated successfully
  *       400:
  *         description: Bad Request - At least one of userName, interests, or location must be provided.
@@ -206,7 +208,7 @@ router.route('/login').post(async (req, res) => {
  *       500:
  *         description: Internal server error.
  */
-router.route('/edit-user/:userID').put(async (req, res) => {
+router.put('/edit-user/:userID', async (req, res) => {
   try {
     const { userName, interests, location } = req.body;
     const userID = req.params.userID;
@@ -247,13 +249,14 @@ router.route('/edit-user/:userID').put(async (req, res) => {
     const updateParams = [...queryParams, userID];
     await connection.execute(updateQuery, updateParams);
 
-    res.status(201).json({ message: "User information updated successfully" });
+    res.status(200).json({ message: "User information updated successfully" });
 
   } catch (err) {
     console.error("Error editing user information:", err);
     res.status(500).json({ message: "Internal server error" });
   }
 });
+
 /**
  * @openapi
  * /api/user/get-user/{userID}:
@@ -266,10 +269,10 @@ router.route('/edit-user/:userID').put(async (req, res) => {
  *         name: userID
  *         required: true
  *         schema:
- *           type: string
+ *           type: integer
  *         description: The ID of the user to retrieve details for.
  *     responses:
- *       201:
+ *       200:
  *         description: Successful operation
  *         content:
  *           application/json:
@@ -307,13 +310,14 @@ router.get('/get-user/:userID', async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.status(201).json(user[0]);
+    res.status(200).json(user[0]);
 
   } catch (err) {
     console.error("Error getting user details:", err);
     res.status(500).json({ message: "Internal server error" });
   }
 });
+
 /**
  * @openapi
  * /api/user/delete-user/{userID}:
@@ -375,4 +379,5 @@ router.delete('/delete-user/:userID', async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
+
 module.exports = router;
