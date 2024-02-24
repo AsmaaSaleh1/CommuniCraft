@@ -145,5 +145,62 @@ router.route('/edit-material/:materialID').put(async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 });
+/**
+ * @openapi
+ * /api/material/get-materials/{userID}:
+ *   get:
+ *     tags:
+ *       - Material Controller
+ *     summary: Get materials for a specific user
+ *     parameters:
+ *       - in: path
+ *         name: userID
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the user to retrieve materials for.
+ *     responses:
+ *       201:
+ *         description: Successful operation
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   materialID:
+ *                     type: integer
+ *                     description: The ID of the material.
+ *                   materialName:
+ *                     type: string
+ *                     description: The name of the material.
+ *                   quantity:
+ *                     type: integer
+ *                     description: The quantity of the material.
+ *       404:
+ *         description: Not Found - User not found or no materials found for the user.
+ *       500:
+ *         description: Internal server error.
+ */
+router.route('/get-materials/:userID').get(async (req, res) => {
+    try {
+        const userID = req.params.userID;
 
+        // Get database connection
+        const connection = await db.getConnection();
+
+        // Fetch materials for the specified user
+        const [materials] = await connection.execute('SELECT * FROM material WHERE userID = ?', [userID]);
+        if (materials.length === 0) {
+            return res.status(404).json({ message: "No materials found for the user" });
+        }
+
+        res.status(201).json(materials);
+
+    } catch (err) {
+        console.error("Error getting materials:", err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
 module.exports = router;
