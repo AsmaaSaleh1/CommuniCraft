@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../modals/db');
+const Material = require('../models/Material');
+
 /**
  * @openapi
  * /api/material/add-material/{userID}:
@@ -51,19 +52,14 @@ router.route('/add-material/:userID').post(async (req, res) => {
             return res.status(400).json({ message: "Material name and quantity are required" });
         }
 
-        // Get database connection
-        const connection = await db.getConnection();
+        // Create material
+        const material = await Material.create({
+            materialName,
+            quantity,
+            userID
+        });
 
-        // Check if material with the same name already exists for the user
-        const [existingMaterial] = await connection.execute('SELECT * FROM material WHERE userID = ? AND materialName = ?', [userID, materialName]);
-        if (existingMaterial.length > 0) {
-            return res.status(409).json({ message: "Material with the same name already exists for this user" });
-        }
-
-        // Insert material into the database
-        await connection.execute('INSERT INTO material (materialName, quantity, userID) VALUES (?, ?, ?)', [materialName, quantity, userID]);
-
-        res.status(201).json({ message: "Material added successfully" });
+        res.status(201).json({ message: "Material added successfully", material });
 
     } catch (err) {
         console.error("Error adding material:", err);
@@ -99,7 +95,7 @@ router.route('/add-material/:userID').post(async (req, res) => {
  *                 type: integer
  *                 description: The new quantity for the material.
  *     responses:
- *       201:
+ *       200:
  *         description: Material updated successfully
  *       400:
  *         description: Bad Request - Missing required fields or invalid data format.
@@ -115,31 +111,31 @@ router.route('/edit-material/:materialID').put(async (req, res) => {
         const { materialName, quantity } = req.body;
         const materialID = req.params.materialID;
 
-        // Get database connection
-        const connection = await db.getConnection();
-
-        // Fetch material from the database using materialID
-        const [material] = await connection.execute('SELECT * FROM material WHERE materialID = ?', [materialID]);
-        if (material.length === 0) {
+        // Find material by ID
+        const material = await Material.findByPk(materialID);
+        if (!material) {
             return res.status(404).json({ message: "Material not found" });
         }
 
         // Update material properties if provided in the request
         if (materialName) {
             // Check if material with the new name already exists for the user
-            const [existingMaterial] = await connection.execute('SELECT * FROM material WHERE userID = ? AND materialName = ?', [material[0].userID, materialName]);
-            if (existingMaterial.length > 0 && existingMaterial[0].materialID !== materialID) {
+            const existingMaterial = await Material.findOne({ where: { userID: material.userID, materialName } });
+            if (existingMaterial && existingMaterial.materialID !== materialID) {
                 return res.status(409).json({ message: "Material with the new name already exists for this user" });
             }
             // Update material name
-            await connection.execute('UPDATE material SET materialName = ? WHERE materialID = ?', [materialName, materialID]);
+            material.materialName = materialName;
         }
         if (quantity !== undefined) {
             // Update quantity
-            await connection.execute('UPDATE material SET quantity = ? WHERE materialID = ?', [quantity, materialID]);
+            material.quantity = quantity;
         }
 
-        res.status(201).json({ message: "Material updated successfully" });
+        // Save changes
+        await material.save();
+
+        res.status(200).json({ message: "Material updated successfully", material });
 
     } catch (err) {
         console.error("Error editing material:", err);
@@ -162,24 +158,14 @@ router.route('/edit-material/:materialID').put(async (req, res) => {
  *           type: string
  *         description: The ID of the user to retrieve materials for.
  *     responses:
- *       201:
+ *       200:
  *         description: Successful operation
  *         content:
  *           application/json:
  *             schema:
  *               type: array
  *               items:
- *                 type: object
- *                 properties:
- *                   materialID:
- *                     type: integer
- *                     description: The ID of the material.
- *                   materialName:
- *                     type: string
- *                     description: The name of the material.
- *                   quantity:
- *                     type: integer
- *                     description: The quantity of the material.
+ *                 $ref: '#/components/schemas/Material'
  *       404:
  *         description: Not Found - User not found or no materials found for the user.
  *       500:
@@ -189,16 +175,13 @@ router.route('/get-materials/:userID').get(async (req, res) => {
     try {
         const userID = req.params.userID;
 
-        // Get database connection
-        const connection = await db.getConnection();
-
-        // Fetch materials for the specified user
-        const [materials] = await connection.execute('SELECT * FROM material WHERE userID = ?', [userID]);
+        // Find materials for the specified user
+        const materials = await Material.findAll({ where: { userID } });
         if (materials.length === 0) {
             return res.status(404).json({ message: "No materials found for the user" });
         }
 
-        res.status(201).json(materials);
+        res.status(200).json(materials);
 
     } catch (err) {
         console.error("Error getting materials:", err);
@@ -239,17 +222,14 @@ router.delete('/delete-material/:userID/:materialID', async (req, res) => {
         const userID = req.params.userID;
         const materialID = req.params.materialID;
 
-        // Get database connection
-        const connection = await db.getConnection();
-
-        // Check if the material exists and is owned by the user
-        const [material] = await connection.execute('SELECT * FROM material WHERE materialID = ? AND userID = ?', [materialID, userID]);
-        if (material.length === 0) {
+        // Find material by ID and user ID
+        const material = await Material.findOne({ where: { materialID, userID } });
+        if (!material) {
             return res.status(404).json({ message: "Material not found or not owned by the user" });
         }
 
         // Delete the material
-        await connection.execute('DELETE FROM material WHERE materialID = ?', [materialID]);
+        await material.destroy();
 
         res.status(204).end(); // No content in response
 
