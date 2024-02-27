@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../modals/db');
 const bcrypt = require('bcrypt');
 const User = require('../models/User');
 const {isEmail} = require("validator");

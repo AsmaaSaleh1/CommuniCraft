@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../modals/db');
 const Tool = require('../models/Tool');
 /**
  * @openapi
