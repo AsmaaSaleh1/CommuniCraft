@@ -20,7 +20,7 @@ const Task = sequelize.define('task', {
         type: DataTypes.ENUM('pending', 'in progress', 'completed'),
         allowNull: false,
         validate: {
-            notNull: { msg: 'Please chose status' }
+            notNull: { msg: 'Please choose status' }
         }
     },
     userID: {

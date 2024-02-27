@@ -34,14 +34,14 @@ const Project = sequelize.define('project', {
         type: DataTypes.ENUM('easy', 'medium', 'hard'),
         allowNull: false,
         validate: {
-            notNull: { msg: 'Please chose difficulty' }
+            notNull: { msg: 'Please choose difficulty' }
         }
     },
     category: {
         type: DataTypes.ENUM('textile crafts', 'paper crafts', 'wood crafts', 'metal crafts', 'ceramics and pottery', 'glass crafts', 'jewelry making', 'mixed media crafts'),
         allowNull: false,
         validate: {
-            notNull: { msg: 'Please chose category' }
+            notNull: { msg: 'Please choose category' }
         }
     },
     creatorID: {
