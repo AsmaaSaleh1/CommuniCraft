@@ -10,11 +10,18 @@ const Material = sequelize.define('material', {
     },
     materialName: {
         type: DataTypes.STRING(100),
-        allowNull: false
+        allowNull: false,
+        validate: {
+            notNull: { msg: 'Please enter a material name' }
+        }
     },
     quantity: {
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: false,
+        validate: {
+            notNull: { msg: 'Please enter quantity' },
+            isInt: { msg: 'Quantity must be an integer' }
+        }
     },
     userID: {
         type: DataTypes.INTEGER,
