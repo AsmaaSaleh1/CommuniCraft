@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../modals/db');
+const Skill = require('../models/Skill');
 
 /**
  * @openapi
@@ -48,17 +48,14 @@ router.route('/add-skill/:userID').post(async (req, res) => {
             return res.status(400).json({ message: "Skill name is required" });
         }
 
-        // Get database connection
-        const connection = await db.getConnection();
-
         // Check if skill with the same name already exists for the user
-        const [existingSkill] = await connection.execute('SELECT * FROM skill WHERE userID = ? AND skillName = ?', [userID, skillName]);
-        if (existingSkill.length > 0) {
+        const existingSkill = await Skill.findOne({ where: { userID, skillName } });
+        if (existingSkill) {
             return res.status(409).json({ message: "Skill with the same name already exists for this user" });
         }
 
         // Insert skill into the database
-        await connection.execute('INSERT INTO skill (skillName, userID) VALUES (?, ?)', [skillName, userID]);
+        await Skill.create({ skillName, userID });
 
         res.status(201).json({ message: "Skill added successfully" });
 
@@ -109,24 +106,21 @@ router.route('/edit-skill/:skillID').put(async (req, res) => {
         const { skillName } = req.body;
         const skillID = req.params.skillID;
 
-        // Get database connection
-        const connection = await db.getConnection();
-
         // Fetch skill from the database using skillID
-        const [skill] = await connection.execute('SELECT * FROM skill WHERE skillID = ?', [skillID]);
-        if (skill.length === 0) {
+        const skill = await Skill.findByPk(skillID);
+        if (!skill) {
             return res.status(404).json({ message: "Skill not found" });
         }
 
         // Update skill name if provided in the request
         if (skillName) {
             // Check if skill with the new name already exists for the user
-            const [existingSkill] = await connection.execute('SELECT * FROM skill WHERE userID = ? AND skillName = ?', [skill[0].userID, skillName]);
-            if (existingSkill.length > 0 && existingSkill[0].skillID !== skillID) {
+            const existingSkill = await Skill.findOne({ where: { userID: skill.userID, skillName } });
+            if (existingSkill && existingSkill.skillID !== skillID) {
                 return res.status(409).json({ message: "Skill with the new name already exists for this user" });
             }
             // Update skill name
-            await connection.execute('UPDATE skill SET skillName = ? WHERE skillID = ?', [skillName, skillID]);
+            await skill.update({ skillName });
         }
 
         res.status(201).json({ message: "Skill updated successfully" });
@@ -152,7 +146,7 @@ router.route('/edit-skill/:skillID').put(async (req, res) => {
  *           type: string
  *         description: The ID of the user to retrieve skills for.
  *     responses:
- *       201:
+ *       200:
  *         description: Successful operation
  *         content:
  *           application/json:
@@ -176,16 +170,13 @@ router.route('/get-skills/:userID').get(async (req, res) => {
     try {
         const userID = req.params.userID;
 
-        // Get database connection
-        const connection = await db.getConnection();
-
         // Fetch skills for the specified user
-        const [skills] = await connection.execute('SELECT * FROM skill WHERE userID = ?', [userID]);
+        const skills = await Skill.findAll({ where: { userID } });
         if (skills.length === 0) {
             return res.status(404).json({ message: "No skills found for the user" });
         }
 
-        res.status(201).json(skills);
+        res.status(200).json(skills);
 
     } catch (err) {
         console.error("Error getting skills:", err);
@@ -226,17 +217,14 @@ router.delete('/delete-skill/:userID/:skillID', async (req, res) => {
         const userID = req.params.userID;
         const skillID = req.params.skillID;
 
-        // Get database connection
-        const connection = await db.getConnection();
-
         // Check if the skill exists and is owned by the user
-        const [skill] = await connection.execute('SELECT * FROM skill WHERE skillID = ? AND userID = ?', [skillID, userID]);
-        if (skill.length === 0) {
+        const skill = await Skill.findOne({ where: { skillID, userID } });
+        if (!skill) {
             return res.status(404).json({ message: "Skill not found or not owned by the user" });
         }
 
         // Delete the skill
-        await connection.execute('DELETE FROM skill WHERE skillID = ?', [skillID]);
+        await skill.destroy();
 
         res.status(204).end(); // No content in response
 
