@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../modals/db');
+const Tool = require('../models/Tool');
 /**
  * @openapi
  * /api/tool/add-tool/{userID}:
@@ -51,17 +52,14 @@ router.route('/add-tool/:userID').post(async (req, res) => {
             return res.status(400).json({ message: "Tool name and quantity are required" });
         }
 
-        // Get database connection
-        const connection = await db.getConnection();
-
         // Check if tool with the same name already exists for the user
-        const [existingTool] = await connection.execute('SELECT * FROM tool WHERE userID = ? AND toolName = ?', [userID, toolName]);
-        if (existingTool.length > 0) {
+        const existingTool = await Tool.findOne({ where: { userID, toolName } });
+        if (existingTool) {
             return res.status(409).json({ message: "Tool with the same name already exists for this user" });
         }
 
-        // Insert tool into the database
-        await connection.execute('INSERT INTO tool (toolName, quantity, userID) VALUES (?, ?, ?)', [toolName, quantity, userID]);
+        // Create tool using Sequelize
+        await Tool.create({ toolName, quantity, userID });
 
         res.status(201).json({ message: "Tool added successfully" });
 
@@ -115,28 +113,25 @@ router.route('/edit-tool/:toolID').put(async (req, res) => {
         const { toolName, quantity } = req.body;
         const toolID = req.params.toolID;
 
-        // Get database connection
-        const connection = await db.getConnection();
-
         // Fetch tool from the database using toolID
-        const [tool] = await connection.execute('SELECT * FROM tool WHERE toolID = ?', [toolID]);
-        if (tool.length === 0) {
+        const tool = await Tool.findByPk(toolID);
+        if (!tool) {
             return res.status(404).json({ message: "Tool not found" });
         }
 
         // Update tool properties if provided in the request
         if (toolName) {
             // Check if tool with the new name already exists for the user
-            const [existingTool] = await connection.execute('SELECT * FROM tool WHERE userID = ? AND toolName = ?', [tool[0].userID, toolName]);
-            if (existingTool.length > 0 && existingTool[0].toolID !== toolID) {
+            const existingTool = await Tool.findOne({ where: { userID: tool.userID, toolName } });
+            if (existingTool && existingTool.toolID !== toolID) {
                 return res.status(409).json({ message: "Tool with the new name already exists for this user" });
             }
             // Update tool name
-            await connection.execute('UPDATE tool SET toolName = ? WHERE toolID = ?', [toolName, toolID]);
+            await tool.update({ toolName });
         }
         if (quantity !== undefined) {
             // Update quantity
-            await connection.execute('UPDATE tool SET quantity = ? WHERE toolID = ?', [quantity, toolID]);
+            await tool.update({ quantity });
         }
 
         res.status(201).json({ message: "Tool updated successfully" });
@@ -189,16 +184,13 @@ router.route('/get-tools/:userID').get(async (req, res) => {
     try {
         const userID = req.params.userID;
 
-        // Get database connection
-        const connection = await db.getConnection();
-
-        // Fetch tools for the specified user
-        const [tools] = await connection.execute('SELECT * FROM tool WHERE userID = ?', [userID]);
+        // Fetch tools for the specified user using Sequelize
+        const tools = await Tool.findAll({ where: { userID } });
         if (tools.length === 0) {
             return res.status(404).json({ message: "No tools found for the user" });
         }
 
-        res.status(201).json(tools);
+        res.status(200).json(tools);
 
     } catch (err) {
         console.error("Error getting tools:", err);
@@ -239,17 +231,14 @@ router.delete('/delete-tool/:userID/:toolID', async (req, res) => {
         const userID = req.params.userID;
         const toolID = req.params.toolID;
 
-        // Get database connection
-        const connection = await db.getConnection();
-
-        // Check if the tool exists and is owned by the user
-        const [tool] = await connection.execute('SELECT * FROM tool WHERE toolID = ? AND userID = ?', [toolID, userID]);
-        if (tool.length === 0) {
+        // Check if the tool exists and is owned by the user using Sequelize
+        const tool = await Tool.findOne({ where: { toolID, userID } });
+        if (!tool) {
             return res.status(404).json({ message: "Tool not found or not owned by the user" });
         }
 
-        // Delete the tool
-        await connection.execute('DELETE FROM tool WHERE toolID = ?', [toolID]);
+        // Delete the tool using Sequelize
+        await tool.destroy();
 
         res.status(204).end(); // No content in response
 
