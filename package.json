@@ -27,10 +27,12 @@
     "express": "~4.18.2",
     "http-errors": "~2.0.0",
     "morgan": "~1.9.1",
-    "mysql2": "^3.9.1",
+    "mysql2": "^3.9.2",
     "nodemailer": "^6.9.10",
     "pug": "^3.0.2",
+    "sequelize": "^6.37.1",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.0"
+    "swagger-ui-express": "^5.0.0",
+    "validator": "^13.11.0"
   }
 }
