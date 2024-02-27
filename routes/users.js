@@ -2,10 +2,8 @@ const express = require('express');
 const router = express.Router();
 const db = require('../modals/db');
 const bcrypt = require('bcrypt');
-
-// Regular expression for validating email format
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
+const User = require('../models/User');
+const {isEmail} = require("validator");
 /**
  * @openapi
  * /api/user/signup:
@@ -58,37 +56,34 @@ const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 router.post('/signup', async (req, res) => {
   try {
     const { userName, email, password, interests, location } = req.body;
+
     // Check if required fields are provided
     if (!userName || !email || !password || !interests || !location) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    // Check if email is a valid format
-    if (!emailRegex.test(email)) {
+    // Check if email is a valid format using validator
+    if (!isEmail(email)) {
       return res.status(401).json({ message: "Invalid email format" });
     }
 
-    // Get database connection
-    const connection = await db.getConnection();
-    await connection.beginTransaction();
-
-    // Check if email already exists
-    const [existingUser] = await connection.execute('SELECT * FROM User WHERE email = ?', [email]);
-    if (existingUser.length > 0) {
-      // Email already exists, return 403 Forbidden
-      await connection.commit(); // Commit transaction before returning response
+    // Check if email already exists in the database
+    const existingUser = await User.findOne({ where: { email } });
+    if (existingUser) {
       return res.status(403).json({ message: "Email already exists" });
     }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Insert user into the database
-    const sql = `INSERT INTO User (userName, email, password, interests, location) VALUES (?, ?, ?, ?, ?)`;
-    await connection.execute(sql, [userName, email, hashedPassword, interests, location]);
-
-    // Commit transaction
-    await connection.commit();
+    // Create user using Sequelize model
+    await User.create({
+      userName,
+      email,
+      password: hashedPassword,
+      interests,
+      location
+    });
 
     res.status(201).json({ message: "User signed up successfully" });
   } catch (err) {
@@ -142,23 +137,25 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: "Email and password are required" });
     }
 
-    // Get database connection
-    const connection = await db.getConnection();
+    // Find user by email using Sequelize model
+    const user = await User.findOne({
+      where: { email: email }
+    });
 
-    // Fetch user from the database using email
-    const [user] = await connection.execute('SELECT * FROM User WHERE email = ?', [email]);
-    if (user.length === 0) {
+    // If user not found
+    if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
     // Compare passwords
-    const passwordMatch = await bcrypt.compare(password, user[0].password);
+    const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
       return res.status(401).json({ message: "Invalid password" });
     }
 
     // Password is correct
-    const userWithoutPassword = { ...user[0] };
+    // Omitting the password field from the user object before sending it in the response
+    const userWithoutPassword = { ...user.toJSON() };
     delete userWithoutPassword.password;
     res.status(200).json({ message: "Login successful", user: userWithoutPassword });
 
@@ -218,36 +215,21 @@ router.put('/edit-user/:userID', async (req, res) => {
       return res.status(400).json({ message: "At least one of userName, interests, or location must be provided" });
     }
 
-    // Get database connection
-    const connection = await db.getConnection();
+    // Find user by userID using Sequelize model
+    const user = await User.findByPk(userID);
 
-    // Fetch user from the database using userID
-    const [user] = await connection.execute('SELECT * FROM user WHERE userID = ?', [userID]);
-    if (user.length === 0) {
+    // If user not found
+    if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    let updateFields = [];
-    let queryParams = [];
+    // Update user attributes
+    if (userName) user.userName = userName;
+    if (interests) user.interests = interests;
+    if (location) user.location = location;
 
-    // Construct the SQL query based on the provided fields
-    if (userName) {
-      updateFields.push('userName = ?');
-      queryParams.push(userName);
-    }
-    if (interests) {
-      updateFields.push('interests = ?');
-      queryParams.push(interests);
-    }
-    if (location) {
-      updateFields.push('location = ?');
-      queryParams.push(location);
-    }
-
-    // Update user information
-    const updateQuery = `UPDATE user SET ${updateFields.join(', ')} WHERE userID = ?`;
-    const updateParams = [...queryParams, userID];
-    await connection.execute(updateQuery, updateParams);
+    // Save the updated user
+    await user.save();
 
     res.status(200).json({ message: "User information updated successfully" });
 
@@ -256,7 +238,6 @@ router.put('/edit-user/:userID', async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
-
 /**
  * @openapi
  * /api/user/get-user/{userID}:
@@ -301,16 +282,17 @@ router.get('/get-user/:userID', async (req, res) => {
   try {
     const userID = req.params.userID;
 
-    // Get database connection
-    const connection = await db.getConnection();
+    // Find user by userID using Sequelize model
+    const user = await User.findByPk(userID, {
+      attributes: ['userName', 'email', 'interests', 'location']
+    });
 
-    // Fetch user details from the database using userID
-    const [user] = await connection.execute('SELECT userName, email, interests, location FROM user WHERE userID = ?', [userID]);
-    if (user.length === 0) {
+    // If user not found
+    if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.status(200).json(user[0]);
+    res.status(200).json(user);
 
   } catch (err) {
     console.error("Error getting user details:", err);
@@ -344,36 +326,19 @@ router.delete('/delete-user/:userID', async (req, res) => {
   try {
     const userID = req.params.userID;
 
-    // Get database connection
-    const connection = await db.getConnection();
-    await connection.beginTransaction();
+    // Find user by userID using Sequelize model
+    const user = await User.findByPk(userID);
 
-    // Check if the user exists
-    const [user] = await connection.execute('SELECT * FROM user WHERE userID = ?', [userID]);
-    if (user.length === 0) {
-      await connection.rollback();
+    // If user not found
+    if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    try {
-      // Delete related tools
-      await connection.execute('DELETE FROM tool WHERE userID = ?', [userID]);
+    // Delete the user
+    await user.destroy();
 
-      // Delete related materials
-      await connection.execute('DELETE FROM material WHERE userID = ?', [userID]);
+    res.status(204).end(); // No content in response
 
-      // Delete related skills
-      await connection.execute('DELETE FROM skill WHERE userID = ?', [userID]);
-
-      // Delete the user
-      await connection.execute('DELETE FROM user WHERE userID = ?', [userID]);
-
-      await connection.commit();
-      res.status(204).end(); // No content in response
-    } catch (error) {
-      await connection.rollback();
-      throw error;
-    }
   } catch (err) {
     console.error("Error deleting user:", err);
     res.status(500).json({ message: "Internal server error" });
