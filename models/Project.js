@@ -62,7 +62,7 @@ const Project = sequelize.define('project', {
     },
     storeID: {
         type: DataTypes.INTEGER,
-        allowNull: false,
+        allowNull: true,
         references: {
             model: Store,
             key: 'storeID'
