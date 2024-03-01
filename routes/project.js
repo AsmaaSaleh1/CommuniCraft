@@ -73,6 +73,18 @@ router.route('/add-project/:creatorID').post(async (req, res) => {
         const { title, description, groupSize, difficulty, category, storeID, cost } = req.body;
         const creatorID = req.params.creatorID;
 
+        // Check if storeID is provided, if not, consider it as null
+        const projectData = {
+            title,
+            description,
+            groupSize,
+            difficulty,
+            category,
+            creatorID,
+            storeID: storeID !== undefined ? storeID : null, // Set storeID to null if not provided
+            cost
+        };
+
         // Check if required fields are provided
         if (!title || !description || !groupSize || !difficulty || !category || !creatorID || !cost) {
             return res.status(400).json({ message: "All required fields must be provided" });
@@ -85,7 +97,7 @@ router.route('/add-project/:creatorID').post(async (req, res) => {
         }
 
         // Create project using Sequelize
-        await Project.create({ title, description, groupSize, difficulty, category, creatorID, storeID, cost });
+        await Project.create(projectData);
 
         res.status(201).json({ message: "Project added successfully" });
 
