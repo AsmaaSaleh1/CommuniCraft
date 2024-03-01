@@ -62,7 +62,8 @@ const Project = sequelize.define('project', {
     },
     storeID: {
         type: DataTypes.INTEGER,
-        allowNull: false,
+        allowNull: true,
+        defaultValue: null,
         references: {
             model: Store,
             key: 'storeID'
@@ -70,7 +71,7 @@ const Project = sequelize.define('project', {
         validate: {
             async isStoreExists(value) {
                 const store = await Store.findByPk(value);
-                if (!store) {
+                if (!store && value!=null) {
                     throw new Error('Store does not exist');
                 }
             }
