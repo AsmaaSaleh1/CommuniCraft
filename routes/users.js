@@ -3,6 +3,13 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const User = require('../models/User');
 const {isEmail} = require("validator");
+const jwt=require("jsonwebtoken");
+const createToken=(id)=>{
+  return jwt.sign({id},
+      'An-najah national university',
+      {expiresIn: 1800}//30 min (60*30)
+  );
+}
 /**
  * @openapi
  * /api/user/signup:
@@ -76,15 +83,17 @@ router.post('/signup', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user using Sequelize model
-    await User.create({
+    const newUser=await User.create({
       userName,
       email,
       password: hashedPassword,
       interests,
       location
     });
-
-    res.status(201).json({ message: "User signed up successfully" });
+    const { userID } = newUser;
+    const token=createToken(userID);
+    res.cookie('jwt',token,{httpOnly:true,maxAge:1200*1000});
+    res.status(201).json({ message: "User signed up successfully",user:userID});
   } catch (err) {
     console.error("Error signing up user:", err);
     res.status(500).json({ message: "Internal server error" });
