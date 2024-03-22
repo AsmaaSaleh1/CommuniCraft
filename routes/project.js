@@ -3,8 +3,7 @@ const router = express.Router();
 const Project = require('../models/Project');
 const User = require('../models/User');
 const Task = require('../models/Task');
-const { Op } = require('sequelize'); // Import Op from Sequelize
-
+const { Op } = require('sequelize');
 
 /**
  * @openapi
@@ -433,7 +432,88 @@ router.get('/project/:projectID/users/:userID', async (req, res) => {
     }
 });
 
-module.exports = router;
 
+
+/**
+ * @openapi
+ * /api/project/update-status/{projectID}:
+ *   put:
+ *     tags:
+ *       - Project Controller
+ *     summary: Update project status based on task completion
+ *     parameters:
+ *       - in: path
+ *         name: projectID
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the project to update.
+ *     responses:
+ *       200:
+ *         description: Project status updated successfully
+ *       404:
+ *         description: Not Found - Project not found.
+ *       500:
+ *         description: Internal server error.
+ */
+router.put('/update-status/:projectID', async (req, res) => {
+    try {
+        const projectID = req.params.projectID;
+
+        // Find project by ID
+        const project = await Project.findByPk(projectID);
+        if (!project) {
+            return res.status(404).json({ message: "Project not found" });
+        }
+
+        // Fetch tasks for the project
+        const tasks = await Task.findAll({ where: { projectID } });
+        // Update project status based on task completion
+        project.isCompleted = tasks.every(task => task.status === 'completed');
+        await project.save();
+
+        res.status(200).json({ message: "Project status updated successfully" });
+    } catch (err) {
+        console.error("Error updating project status:", err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
+
+
+
+
+
+
+/**
+ * @openapi
+ * /api/project/completed-projects:
+ *   get:
+ *     tags:
+ *       - Project Controller
+ *     summary: Get all completed projects
+ *     responses:
+ *       200:
+ *         description: Successful operation
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Project'
+ *       500:
+ *         description: Internal server error.
+ */
+router.get('/completed-projects', async (req, res) => {
+    try {
+        // Find all projects where isCompleted is true (completed projects)
+        const completedProjects = await Project.findAll({ where: { isCompleted: true } });
+
+        res.status(200).json(completedProjects);
+    } catch (err) {
+        console.error("Error getting completed projects:", err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
 
 module.exports = router;

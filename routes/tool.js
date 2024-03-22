@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Tool = require('../models/Tool');
+
 /**
  * @openapi
  * /api/tool/add-tool/{userID}:
@@ -41,9 +42,10 @@ const Tool = require('../models/Tool');
  *       500:
  *         description: Internal server error.
  */
+
 router.route('/add-tool/:userID').post(async (req, res) => {
     try {
-        const { toolName, quantity } = req.body;
+        const { toolName, quantity, cost } = req.body;
         const userID = req.params.userID;
 
         // Check if required fields are provided
@@ -58,7 +60,7 @@ router.route('/add-tool/:userID').post(async (req, res) => {
         }
 
         // Create tool using Sequelize
-        await Tool.create({ toolName, quantity, userID });
+        await Tool.create({ toolName, quantity, cost, userID });
 
         res.status(201).json({ message: "Tool added successfully" });
 
@@ -67,6 +69,7 @@ router.route('/add-tool/:userID').post(async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 });
+
 
 /**
  * @openapi
@@ -109,7 +112,7 @@ router.route('/add-tool/:userID').post(async (req, res) => {
  */
 router.route('/edit-tool/:toolID').put(async (req, res) => {
     try {
-        const { toolName, quantity } = req.body;
+        const { toolName, quantity, cost } = req.body;
         const toolID = req.params.toolID;
 
         // Fetch tool from the database using toolID
@@ -131,6 +134,10 @@ router.route('/edit-tool/:toolID').put(async (req, res) => {
         if (quantity !== undefined) {
             // Update quantity
             await tool.update({ quantity });
+        }
+        if (cost !== undefined) {
+            // Update cost
+            await tool.update({ cost });
         }
 
         res.status(201).json({ message: "Tool updated successfully" });
@@ -236,7 +243,6 @@ router.delete('/delete-tool/:userID/:toolID', async (req, res) => {
             return res.status(404).json({ message: "Tool not found or not owned by the user" });
         }
 
-        // Delete the tool using Sequelize
         await tool.destroy();
 
         res.status(204).end(); // No content in response

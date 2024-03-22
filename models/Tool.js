@@ -23,6 +23,14 @@ const Tool = sequelize.define('tool', {
             isInt: { msg: 'Quantity must be an integer' }
         }
     },
+    cost: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        validate: {
+            notNull: { msg: 'Please enter the cost' },
+            isInt: { msg: 'Cost must be an integer' }
+        }
+    },
     userID: {
         type: DataTypes.INTEGER,
         allowNull: false,

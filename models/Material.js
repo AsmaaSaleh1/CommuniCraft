@@ -1,6 +1,7 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../modals/db');
 const User = require("./User");
+
 const Material = sequelize.define('material', {
     materialID: {
         type: DataTypes.INTEGER,
@@ -20,6 +21,14 @@ const Material = sequelize.define('material', {
         validate: {
             notNull: { msg: 'Please enter quantity' },
             isInt: { msg: 'Quantity must be an integer' }
+        }
+    },
+    cost: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        validate: {
+            notNull: { msg: 'Please enter cost' },
+            isInt: { msg: 'Cost must be an integer' }
         }
     },
     userID: {

@@ -44,18 +44,19 @@ const Material = require('../models/Material');
  */
 router.route('/add-material/:userID').post(async (req, res) => {
     try {
-        const { materialName, quantity } = req.body;
+        const { materialName, quantity, cost } = req.body;
         const userID = req.params.userID;
 
         // Check if required fields are provided
-        if (!materialName || !quantity) {
-            return res.status(400).json({ message: "Material name and quantity are required" });
+        if (!materialName || !quantity || !cost) {
+            return res.status(400).json({ message: "Material name, quantity, and cost are required" });
         }
 
         // Create material
         const material = await Material.create({
             materialName,
             quantity,
+            cost,
             userID
         });
 
@@ -108,7 +109,7 @@ router.route('/add-material/:userID').post(async (req, res) => {
  */
 router.route('/edit-material/:materialID').put(async (req, res) => {
     try {
-        const { materialName, quantity } = req.body;
+        const { materialName, quantity, cost } = req.body;
         const materialID = req.params.materialID;
 
         // Find material by ID
@@ -117,7 +118,6 @@ router.route('/edit-material/:materialID').put(async (req, res) => {
             return res.status(404).json({ message: "Material not found" });
         }
 
-        // Update material properties if provided in the request
         if (materialName) {
             // Check if material with the new name already exists for the user
             const existingMaterial = await Material.findOne({ where: { userID: material.userID, materialName } });
@@ -131,6 +131,10 @@ router.route('/edit-material/:materialID').put(async (req, res) => {
             // Update quantity
             material.quantity = quantity;
         }
+        if (cost !== undefined) {
+            // Update cost
+            material.cost = cost;
+        }
 
         // Save changes
         await material.save();
@@ -142,6 +146,7 @@ router.route('/edit-material/:materialID').put(async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 });
+
 
 /**
  * @openapi
