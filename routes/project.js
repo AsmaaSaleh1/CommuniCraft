@@ -1,6 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const Project = require('../models/Project');
+const User = require('../models/User');
+const Task = require('../models/Task');
+const { Op } = require('sequelize'); // Import Op from Sequelize
+
 
 /**
  * @openapi
@@ -70,7 +74,7 @@ const Project = require('../models/Project');
  */
 router.route('/add-project/:creatorID').post(async (req, res) => {
     try {
-        const { title, description, groupSize, difficulty, category, storeID, cost } = req.body;
+        const { title, description, groupSize, difficulty, category, cost,isCompleted } = req.body;
         const creatorID = req.params.creatorID;
 
         // Check if storeID is provided, if not, consider it as null
@@ -81,8 +85,9 @@ router.route('/add-project/:creatorID').post(async (req, res) => {
             difficulty,
             category,
             creatorID,
-            storeID: storeID !== undefined ? storeID : null, // Set storeID to null if not provided
-            cost
+           // storeID: storeID !== undefined ? storeID : null, // Set storeID to null if not provided
+            cost,
+            isCompleted
         };
 
         // Check if required fields are provided
@@ -348,4 +353,87 @@ router.delete('/delete-project/:creatorID/:projectID', async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 });
+/**
+ * @openapi
+ * /api/project/{projectID}/users/{userID}:
+ *   get:
+ *     tags:
+ *       - Project Controller
+ *     summary: Get usernames and emails of users working on a specific project
+ *     parameters:
+ *       - in: path
+ *         name: projectID
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the project.
+ *       - in: path
+ *         name: userID
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the user who must work on the project.
+ *     responses:
+ *       200:
+ *         description: Successful operation
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   userID:
+ *                     type: integer
+ *                     description: The ID of the user.
+ *                   userName:
+ *                     type: string
+ *                     description: The username of the user.
+ *                   email:
+ *                     type: string
+ *                     description: The email of the user.
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get('/project/:projectID/users/:userID', async (req, res) => {
+    try {
+        const projectID = parseInt(req.params.projectID, 10); // Parse projectID as integer
+        const userID = parseInt(req.params.userID, 10); // Parse userID as integer
+
+        // Check if the specified user ID is assigned to the specified project
+        const project = await Project.findOne({
+            where: { projectID, creatorID: userID }
+        });
+
+        if (!project) {
+            return res.status(404).json({ message: 'User is not assigned to this project' });
+        }
+
+        // Find all users working on the specified project except the specified user ID
+        const users = await User.findAll({
+            include: [
+                {
+                    model: Task,
+                    where: { projectID },
+                    attributes: [],
+                    required: true
+                }
+            ],
+            attributes: ['userID', 'userName', 'email'],
+            where: {
+                userID: { [Op.ne]: userID } // Exclude the specified user ID using Op.ne
+            },
+            raw: true
+        });
+
+        return res.status(200).json(users);
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+module.exports = router;
+
+
 module.exports = router;

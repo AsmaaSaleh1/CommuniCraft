@@ -16,6 +16,13 @@ const Task = sequelize.define('task', {
             notNull: { msg: 'Please enter description' }
         }
     },
+    Comments:{
+        type: DataTypes.TEXT,
+        allowNull: false,
+        validate: {
+            notNull: { msg: 'Please enter your comments on your task' }
+        }
+    },
     status: {
         type: DataTypes.ENUM('pending', 'in progress', 'completed'),
         allowNull: false,
@@ -59,5 +66,5 @@ const Task = sequelize.define('task', {
     tableName: 'task',
     timestamps: false
 });
-
+//Task.belongsTo(Project, { foreignKey: 'projectID' });
 module.exports = Task;

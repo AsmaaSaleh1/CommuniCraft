@@ -1,6 +1,6 @@
 module.exports = {
     HOST: "localhost",
-    USER: "root",
-    PASSWORD: "",
+    USER: "raia",
+    PASSWORD: "123456789raia**RAIA",
     DB: "communicraft"
 };

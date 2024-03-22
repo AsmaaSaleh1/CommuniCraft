@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Skill = require('../models/Skill');
+const User = require('../models/User');
 
 /**
  * @openapi
@@ -230,6 +231,57 @@ router.delete('/delete-skill/:userID/:skillID', async (req, res) => {
 
     } catch (err) {
         console.error("Error deleting skill:", err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
+
+/**
+ * @openapi
+ * /api/skills/{skillName}:
+ *   get:
+ *     tags:
+ *       - Skills Controller
+ *     summary: Get users with specific skills
+ *     parameters:
+ *       - in: path
+ *         name: skillName
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The name of the skill to search for.
+ *     responses:
+ *       200:
+ *         description: Successful operation
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Bad Request - Missing skillName parameter.
+ *       500:
+ *         description: Internal server error.
+ */
+router.get('/skills/:skillName', async (req, res) => {
+    try {
+        const { skillName } = req.params;
+
+        if (!skillName) {
+            return res.status(400).json({ message: "Skill name parameter is required" });
+        }
+        // Find all users with the specified skill
+        const usersWithSkill = await User.findAll({
+            include: {
+                model: Skill,
+                where: { skillName },
+                attributes: []
+            }
+        });
+        res.status(200).json(usersWithSkill);
+    } catch (err) {
+        console.error("Error getting users with skill:", err);
         res.status(500).json({ message: "Internal server error" });
     }
 });

@@ -1,7 +1,6 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../modals/db');
 const User = require("./User");
-
 const Material = sequelize.define('material', {
     materialID: {
         type: DataTypes.INTEGER,

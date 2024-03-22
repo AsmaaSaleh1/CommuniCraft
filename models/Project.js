@@ -1,7 +1,8 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../modals/db');
 const User = require("./User");
-const Store = require("./Store");
+//const Store = require("./Store");
+const Task = require('./Task');
 
 const Project = sequelize.define('project', {
     projectID: {
@@ -60,7 +61,7 @@ const Project = sequelize.define('project', {
             }
         }
     },
-    storeID: {
+    /*storeID: {
         type: DataTypes.INTEGER,
         allowNull: true,
         defaultValue: null,
@@ -76,17 +77,22 @@ const Project = sequelize.define('project', {
                 }
             }
         }
-    },
+    }*/
     cost: {
         type: DataTypes.INTEGER,
         allowNull: false,
         validate: {
             notNull: { msg: 'Please enter the cost' }
         }
+    },isCompleted: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false // Default value is false (not completed)
     }
 }, {
     tableName: 'project',
     timestamps: false
 });
+//Project.hasMany(Task, { foreignKey: 'projectID' });
 
 module.exports = Project;

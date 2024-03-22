@@ -8,7 +8,7 @@ const usersRouter = require('./routes/users');
 const materialRouter = require('./routes/material');
 const toolRouter = require('./routes/tool');
 const skillRouter=require('./routes/skill');
-const storeRouter=require('./routes/store');
+//const storeRouter=require('./routes/store');
 const projectRouter=require('./routes/project');
 const app = express();
 
@@ -24,6 +24,6 @@ app.use('/users', usersRouter);
 app.use('/material',materialRouter);
 app.use('/tool',toolRouter);
 app.use('/skill',skillRouter);
-app.use('/store',storeRouter);
+//app.use('/store',storeRouter);
 app.use('/project',projectRouter);
 module.exports = app;
