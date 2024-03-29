@@ -47,7 +47,6 @@ router.route('/add-tool/:userID').post(async (req, res) => {
     try {
         const { toolName, quantity, cost } = req.body;
         const userID = req.params.userID;
-
         // Check if required fields are provided
         if (!toolName || !quantity) {
             return res.status(400).json({ message: "Tool name and quantity are required" });
@@ -125,7 +124,7 @@ router.route('/edit-tool/:toolID').put(async (req, res) => {
         if (toolName) {
             // Check if tool with the new name already exists for the user
             const existingTool = await Tool.findOne({ where: { userID: tool.userID, toolName } });
-            if (existingTool && existingTool.toolID !== toolID) {
+            if (existingTool && existingTool.toolID != toolID) {
                 return res.status(409).json({ message: "Tool with the new name already exists for this user" });
             }
             // Update tool name

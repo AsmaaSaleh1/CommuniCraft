@@ -2,7 +2,6 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../modals/db');
 const User = require("./User");
 const Project = require("./Project");
-
 const Task = sequelize.define('task', {
     taskID: {
         type: DataTypes.INTEGER,
@@ -52,17 +51,17 @@ const Task = sequelize.define('task', {
         references: {
             model: Project,
             key: 'projectID'
-        },
-        validate: {
-            async isProjectExists(value) {
-                const project = await Project.findByPk(value);
-                if (!project) {
+        }, validate: {
+            notNull: { msg: 'Please choose a project' }, // Ensure projectID is not null
+            isValidProject(value) { // Custom validation function to check if the project exists
+                if (!Project.findByPk(value)) {
                     throw new Error('Project does not exist');
                 }
             }
         }
     }
-}, {
+    }
+, {
     tableName: 'task',
     timestamps: false
 });

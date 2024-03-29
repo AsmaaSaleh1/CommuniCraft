@@ -2,7 +2,10 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../modals/db');
 const User = require("./User");
 //const Store = require("./Store");
-const Task = require('./Task');
+//const Task = require('./Task');
+const ProjectMaterial = require("./project_material"); // Import the ProjectMaterial model
+//const Project = require("./project_material"); // Import the ProjectMaterial model
+const ProjectTool = require("./project_tool");
 
 const Project = sequelize.define('project', {
     projectID: {
@@ -93,6 +96,7 @@ const Project = sequelize.define('project', {
     tableName: 'project',
     timestamps: false
 });
-//Project.hasMany(Task, { foreignKey: 'projectID' });
+//Project.hasMany(ProjectMaterial, { foreignKey: 'projectID' });
+//Project.hasMany(ProjectTool, { foreignKey: 'projectID' });
 
 module.exports = Project;

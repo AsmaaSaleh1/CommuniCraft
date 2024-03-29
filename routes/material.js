@@ -232,7 +232,6 @@ router.delete('/delete-material/:userID/:materialID', async (req, res) => {
         if (!material) {
             return res.status(404).json({ message: "Material not found or not owned by the user" });
         }
-
         // Delete the material
         await material.destroy();
 

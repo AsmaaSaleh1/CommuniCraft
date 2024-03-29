@@ -235,7 +235,6 @@ router.delete('/delete-skill/:userID/:skillID', async (req, res) => {
     }
 });
 
-
 /**
  * @openapi
  * /api/skills/{skillName}:
@@ -243,6 +242,7 @@ router.delete('/delete-skill/:userID/:skillID', async (req, res) => {
  *     tags:
  *       - Skills Controller
  *     summary: Get users with specific skills
+ *     description: Retrieves information about users who have a specific skill.
  *     parameters:
  *       - in: path
  *         name: skillName
@@ -271,18 +271,26 @@ router.get('/skills/:skillName', async (req, res) => {
         if (!skillName) {
             return res.status(400).json({ message: "Skill name parameter is required" });
         }
-        // Find all users with the specified skill
-        const usersWithSkill = await User.findAll({
-            include: {
-                model: Skill,
-                where: { skillName },
-                attributes: []
-            }
+        // Find all userIDs with the specified skill
+        const userIDs = await Skill.findAll({
+            where: { skillName },
+            attributes: ['userID'], // Only select the userID column
+            raw: true // Return plain JSON objects
         });
+        // Extract the userIDs from the result
+        const userIDArray = userIDs.map((item) => item.userID);
+
+        // Find user details based on the extracted userIDs
+        const usersWithSkill = await User.findAll({
+            where: { userID: userIDArray },
+            attributes: { exclude: ['password'] } // Exclude password from user details
+        });
+
         res.status(200).json(usersWithSkill);
     } catch (err) {
         console.error("Error getting users with skill:", err);
         res.status(500).json({ message: "Internal server error" });
     }
 });
+
 module.exports = router;

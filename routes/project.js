@@ -4,7 +4,6 @@ const Project = require('../models/Project');
 const User = require('../models/User');
 const Task = require('../models/Task');
 const { Op } = require('sequelize');
-
 /**
  * @openapi
  * /api/project/add-project/{creatorID}:
@@ -75,7 +74,6 @@ router.route('/add-project/:creatorID').post(async (req, res) => {
     try {
         const { title, description, groupSize, difficulty, category, cost,isCompleted } = req.body;
         const creatorID = req.params.creatorID;
-
         // Check if storeID is provided, if not, consider it as null
         const projectData = {
             title,
@@ -88,7 +86,6 @@ router.route('/add-project/:creatorID').post(async (req, res) => {
             cost,
             isCompleted
         };
-
         // Check if required fields are provided
         if (!title || !description || !groupSize || !difficulty || !category || !creatorID || !cost) {
             return res.status(400).json({ message: "All required fields must be provided" });
@@ -179,7 +176,7 @@ router.put('/edit-project/:projectID', async (req, res) => {
         if (title) {
             // Check if another project with the same title already exists
             const existingProject = await Project.findOne({ where: { title } });
-            if (existingProject && existingProject.projectID !== projectID) {
+            if (existingProject && (existingProject.projectID != projectID)) {
                 return res.status(409).json({ message: "Another project with the same title already exists" });
             }
             // Update project title
@@ -257,7 +254,6 @@ router.get('/get-project/:projectID', async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 });
-
 /**
  * @openapi
  * /api/project/get-projects/{creatorID}:
@@ -352,13 +348,15 @@ router.delete('/delete-project/:creatorID/:projectID', async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 });
+
+
 /**
  * @openapi
- * /api/project/{projectID}/users/{userID}:
+ * /projectuser/{projectID}/creater/{userID}:
  *   get:
  *     tags:
  *       - Project Controller
- *     summary: Get usernames and emails of users working on a specific project
+ *     summary: Get all workers in a project owned by the specified user
  *     parameters:
  *       - in: path
  *         name: projectID
@@ -371,9 +369,144 @@ router.delete('/delete-project/:creatorID/:projectID', async (req, res) => {
  *         required: true
  *         schema:
  *           type: integer
- *         description: The ID of the user who must work on the project.
+ *         description: The ID of the user who owns the project.
  *     responses:
- *       200:
+ *       '200':
+ *         description: Successful operation
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   task:
+ *                     type: object
+ *                     properties:
+ *                       taskID:
+ *                         type: integer
+ *                         description: The ID of the task.
+ *                       description:
+ *                         type: string
+ *                         description: The description of the task.
+ *                       comments:
+ *                         type: string
+ *                         description: Comments related to the task.
+ *                       status:
+ *                         type: string
+ *                         description: The status of the task.
+ *                   user:
+ *                     type: object
+ *                     properties:
+ *                       userID:
+ *                         type: integer
+ *                         description: The ID of the user.
+ *                       userName:
+ *                         type: string
+ *                         description: The username of the user.
+ *                       email:
+ *                         type: string
+ *                         description: The email of the user.
+ *                       location:
+ *                         type: string
+ *                         description: The location of the user.
+ *       '404':
+ *         description: Project not found or user is not the creator of the project
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating that the specified project was not found or the user is not the creator of the project.
+ *       '500':
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating an internal server error.
+ */
+//project owner can see all worker in his/her project
+router.get('/projectuser/:projectID/creater/:userID', async (req, res) => {
+    try {
+        const projectID = parseInt(req.params.projectID, 10); // Parse projectID as integer
+        const userID = parseInt(req.params.userID, 10); // Parse userID as integer
+
+        const assignedUser = await Project.findOne({
+            where: { projectID, creatorID: userID }
+        });
+        if (!assignedUser) {
+            return res.status(404).json({ message: 'You are not the creator of the project or project not found' });
+        }
+        // Find tasks for the specified project
+        const tasks = await Task.findAll({
+            where: { projectID },
+            attributes: ['taskID', 'userID', 'description', 'comments', 'status']
+        });
+
+        // Extract user IDs from the tasks
+        const userIDs = tasks.map(task => task.userID);
+
+        // Find user details for the extracted user IDs
+        const users = await User.findAll({
+            where: { userID: { [Op.in]: userIDs } },
+            attributes: ['userID', 'userName', 'email', 'location']
+        });
+
+        // Map user details to tasks
+        const usersTasksInfo = tasks.map(task => {
+            const user = users.find(u => u.userID === task.userID);
+            return {
+                task: {
+                    taskID: task.taskID,
+                    description: task.description,
+                    comments: task.comments,
+                    status: task.status
+                },
+                user: {
+                    userID: user.userID,
+                    userName: user.userName,
+                    email: user.email,
+                    location: user.location
+                }
+            };
+        });
+
+        return res.status(200).json(usersTasksInfo);
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
+/**
+ * @openapi
+ * /userinproject/{projectID}/users/{userID}:
+ *   get:
+ *     tags:
+ *       - Project Controller
+ *     summary: Get users with tasks in the same project as the specified user
+ *     parameters:
+ *       - in: path
+ *         name: projectID
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the project.
+ *       - in: path
+ *         name: userID
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the user to check for tasks in the project.
+ *     responses:
+ *       '200':
  *         description: Successful operation
  *         content:
  *           application/json:
@@ -391,48 +524,95 @@ router.delete('/delete-project/:creatorID/:projectID', async (req, res) => {
  *                   email:
  *                     type: string
  *                     description: The email of the user.
- *     security:
- *       - bearerAuth: []
+ *       '403':
+ *         description: You are not authorized to access this information
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating unauthorized access.
+ *       '404':
+ *         description: Project not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating that the specified project was not found.
+ *       '500':
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating an internal server error.
  */
-router.get('/project/:projectID/users/:userID', async (req, res) => {
+//worker can see some information about other workers with them in same project to easly communicate
+router.get('/userinproject/:projectID/users/:userID', async (req, res) => {
     try {
         const projectID = parseInt(req.params.projectID, 10); // Parse projectID as integer
         const userID = parseInt(req.params.userID, 10); // Parse userID as integer
 
-        // Check if the specified user ID is assigned to the specified project
-        const project = await Project.findOne({
-            where: { projectID, creatorID: userID }
+        // Check if the specified projectID exists
+        const projectExists = await Project.findOne({
+            where: { projectID }
         });
 
-        if (!project) {
-            return res.status(404).json({ message: 'User is not assigned to this project' });
+        if (!projectExists) {
+            return res.status(404).json({ message: 'Project not found' });
         }
 
-        // Find all users working on the specified project except the specified user ID
-        const users = await User.findAll({
-            include: [
-                {
-                    model: Task,
-                    where: { projectID },
-                    attributes: [],
-                    required: true
-                }
-            ],
-            attributes: ['userID', 'userName', 'email'],
-            where: {
-                userID: { [Op.ne]: userID } // Exclude the specified user ID using Op.ne
-            },
-            raw: true
+        // Check if the specified user has a task in the specified project
+        const userHasTask = await Task.findOne({
+            where: { projectID, userID }
         });
 
-        return res.status(200).json(users);
+        if (!userHasTask) {
+            return res.status(403).json({ message: 'You are not authorized to access this information' });
+        }
+
+        // Find tasks for the specified project
+        const tasks = await Task.findAll({
+            where: { projectID }
+        });
+        // Extract user IDs from the tasks
+        const userIDs = tasks.map(task => task.userID);
+        // Find user details for the extracted user IDs
+        const users = await User.findAll({
+            where: { userID: { [Op.in]: userIDs } },
+            attributes: ['userID', 'userName', 'email', 'location']
+        });
+        // Map user details to tasks
+        const usersTasksInfo = tasks.map(task => {
+            const user = users.find(u => u.userID === task.userID);
+            return {
+                user: {
+                    userName: user.userName,
+                    email: user.email,
+                    location: user.location
+                },
+                task: {
+                    description: task.description,
+                    comments: task.comments,
+                    status: task.status
+                }
+            };
+        });
+
+        return res.status(200).json(usersTasksInfo);
     } catch (error) {
         console.error(error);
         return res.status(500).json({ message: 'Internal server error' });
     }
 });
-
-
 
 /**
  * @openapi
@@ -459,7 +639,6 @@ router.get('/project/:projectID/users/:userID', async (req, res) => {
 router.put('/update-status/:projectID', async (req, res) => {
     try {
         const projectID = req.params.projectID;
-
         // Find project by ID
         const project = await Project.findByPk(projectID);
         if (!project) {
@@ -471,19 +650,12 @@ router.put('/update-status/:projectID', async (req, res) => {
         // Update project status based on task completion
         project.isCompleted = tasks.every(task => task.status === 'completed');
         await project.save();
-
         res.status(200).json({ message: "Project status updated successfully" });
     } catch (err) {
         console.error("Error updating project status:", err);
         res.status(500).json({ message: "Internal server error" });
     }
 });
-
-
-
-
-
-
 
 /**
  * @openapi
@@ -508,7 +680,6 @@ router.get('/completed-projects', async (req, res) => {
     try {
         // Find all projects where isCompleted is true (completed projects)
         const completedProjects = await Project.findAll({ where: { isCompleted: true } });
-
         res.status(200).json(completedProjects);
     } catch (err) {
         console.error("Error getting completed projects:", err);

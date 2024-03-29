@@ -1,7 +1,7 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../modals/db');
 const User = require("./User");
-
+const ProjectMaterial = require("./project_material"); // Import the ProjectMaterial model
 const Material = sequelize.define('material', {
     materialID: {
         type: DataTypes.INTEGER,
@@ -51,5 +51,6 @@ const Material = sequelize.define('material', {
     tableName: 'material',
     timestamps: false
 });
+//Material.belongsToMany(Project, { through: ProjectMaterial, foreignKey: 'materialID' });
 
 module.exports = Material;
