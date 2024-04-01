@@ -3,6 +3,7 @@ const router = express.Router();
 const Task = require('../models/Task');
 const User = require('../models/User');
 const Project = require('../models/Project');
+/*
 const loggingMiddleware = require('../middleware/logMiddleware');
 const authMiddleware = require('../middleware/authMiddleware');
 const errorHandlerMiddleware = require('../middleware/errHandMiddleware');
@@ -12,7 +13,7 @@ const rateLimitingMiddleware = require('../middleware/rateLimMiddleware');
 router.use(loggingMiddleware);
 router.use(authMiddleware);
 router.use(validationMiddleware);
-router.use(rateLimitingMiddleware);
+router.use(rateLimitingMiddleware);*/
 
 
 /**
@@ -330,6 +331,6 @@ router.delete('/delete-task/:taskID', async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 });
-router.use(errorHandlerMiddleware);
+//router.use(errorHandlerMiddleware);
 
 module.exports = router;

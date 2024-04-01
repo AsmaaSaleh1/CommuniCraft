@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Tool = require('../models/Tool');
+/*
 const loggingMiddleware = require('../middleware/logMiddleware');
 const authMiddleware = require('../middleware/authMiddleware');
 const errorHandlerMiddleware = require('../middleware/errHandMiddleware');
@@ -10,7 +11,7 @@ const rateLimitingMiddleware = require('../middleware/rateLimMiddleware');
 router.use(loggingMiddleware);
 router.use(authMiddleware);
 router.use(validationMiddleware);
-router.use(rateLimitingMiddleware);
+router.use(rateLimitingMiddleware);*/
 /**
  * @openapi
  * /api/tool/add-tool/{userID}:
@@ -260,6 +261,6 @@ router.delete('/delete-tool/:userID/:toolID', async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 });
-router.use(errorHandlerMiddleware);
+//router.use(errorHandlerMiddleware);
 
 module.exports = router;

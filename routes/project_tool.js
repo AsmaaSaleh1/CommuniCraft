@@ -3,6 +3,7 @@ const router = express.Router();
 const ProjectTool = require('../models/project_tool');
 const Tool = require('../models/tool');
 const Project = require('../models/project');
+/*
 const loggingMiddleware = require('../middleware/logMiddleware');
 const authMiddleware = require('../middleware/authMiddleware');
 const errorHandlerMiddleware = require('../middleware/errHandMiddleware');
@@ -13,7 +14,7 @@ router.use(loggingMiddleware);
 router.use(authMiddleware);
 router.use(validationMiddleware);
 router.use(rateLimitingMiddleware);
-
+*/
 /**
  * @openapi
  * /api/projects/{projectID}/tools/add/{toolID}:
@@ -340,6 +341,6 @@ router.get('/:projectID/tools/get', async (req, res) => {
     }
 });
 
-router.use(errorHandlerMiddleware);
+//router.use(errorHandlerMiddleware);
 
 module.exports = router;

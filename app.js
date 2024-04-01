@@ -13,6 +13,7 @@ const taskRouter=require('./routes/task');
 const projectRouter=require('./routes/project');
 const project_toolRouter=require('./routes/project_tool');
 const project_materialRouter=require('./routes/project_material');
+const jobSearchRouter = require('./routes/jobSearchRoutes'); // Import the job search route
 
 const app = express();
 
@@ -33,4 +34,6 @@ app.use('/project',projectRouter);
 app.use('/task',taskRouter);
 app.use('/project_tool',project_toolRouter);
 app.use('/project_material',project_materialRouter);
+app.use('/jobs', jobSearchRouter); // Mount the job search route
+
 module.exports = app;

@@ -6,26 +6,16 @@ const {isEmail} = require("validator");
 const jwt=require("jsonwebtoken");
 const axios = require('axios');
 
-const loggingMiddleware = require('../middleware/logMiddleware');
+//const loggingMiddleware = require('../middleware/logMiddleware');
 const authMiddleware = require('../middleware/authMiddleware');
-const errorHandlerMiddleware = require('../middleware/errHandMiddleware');
-const validationMiddleware = require('../middleware/validMiddleware');
-const rateLimitingMiddleware = require('../middleware/rateLimMiddleware');
+//const errorHandlerMiddleware = require('../middleware/errHandMiddleware');
+//const validationMiddleware = require('../middleware/validMiddleware');
+//const rateLimitingMiddleware = require('../middleware/rateLimMiddleware');
+//router.use(authMiddleware);
+//router.use(loggingMiddleware);
+//router.use(validationMiddleware);
+//router.use(rateLimitingMiddleware);
 
-router.use(loggingMiddleware);
-router.use(authMiddleware);
-router.use(validationMiddleware);
-router.use(rateLimitingMiddleware);
-
-router.get('/example', async (req, res) => {
-  try {
-    const response = await axios.get('https://jsonplaceholder.typicode.com/posts');
-    res.json(response.data);
-  } catch (error) {
-    console.error('Error fetching data:', error);
-    res.status(500).json({ message: 'Internal server error' });
-  }
-});
 const createToken=(id)=>{
   return jwt.sign({id},
       'An-najah national university',
@@ -374,6 +364,6 @@ router.delete('/delete-user/:userID', async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
-router.use(errorHandlerMiddleware);
+//router.use(errorHandlerMiddleware);
 
 module.exports = router;

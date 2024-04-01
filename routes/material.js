@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Material = require('../models/Material');
-
+/*
 const loggingMiddleware = require('../middleware/logMiddleware');
 const authMiddleware = require('../middleware/authMiddleware');
 const errorHandlerMiddleware = require('../middleware/errHandMiddleware');
@@ -11,7 +11,7 @@ const rateLimitingMiddleware = require('../middleware/rateLimMiddleware');
 router.use(loggingMiddleware);
 router.use(authMiddleware);
 router.use(validationMiddleware);
-router.use(rateLimitingMiddleware);
+router.use(rateLimitingMiddleware);*/
 
 /**
  * @openapi
@@ -253,6 +253,6 @@ router.delete('/delete-material/:userID/:materialID', async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 });
-router.use(errorHandlerMiddleware);
+//router.use(errorHandlerMiddleware);
 
 module.exports = router;

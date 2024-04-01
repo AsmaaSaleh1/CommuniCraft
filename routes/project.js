@@ -4,7 +4,7 @@ const Project = require('../models/Project');
 const User = require('../models/User');
 const Task = require('../models/Task');
 const { Op } = require('sequelize');
-
+/*
 const loggingMiddleware = require('../middleware/logMiddleware');
 const authMiddleware = require('../middleware/authMiddleware');
 const errorHandlerMiddleware = require('../middleware/errHandMiddleware');
@@ -14,7 +14,7 @@ const rateLimitingMiddleware = require('../middleware/rateLimMiddleware');
 router.use(loggingMiddleware);
 router.use(authMiddleware);
 router.use(validationMiddleware);
-router.use(rateLimitingMiddleware);
+router.use(rateLimitingMiddleware);*/
 /**
  * @openapi
  * /api/project/add-project/{creatorID}:
@@ -697,6 +697,6 @@ router.get('/completed-projects', async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 });
-router.use(errorHandlerMiddleware);
+//router.use(errorHandlerMiddleware);
 
 module.exports = router;
