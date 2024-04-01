@@ -2,7 +2,20 @@ const express = require('express');
 const router = express.Router();
 const ProjectMaterial = require('../models/project_material');
 const Material = require('../models/material');
-const Project = require('../models/Project'); // Import the Project model
+const Project = require('../models/Project');
+const loggingMiddleware = require('../middleware/logMiddleware');
+const authMiddleware = require('../middleware/authMiddleware');
+const errorHandlerMiddleware = require('../middleware/errHandMiddleware');
+const validationMiddleware = require('../middleware/validMiddleware');
+const rateLimitingMiddleware = require('../middleware/rateLimMiddleware');
+
+router.use(loggingMiddleware);
+router.use(authMiddleware);
+router.use(validationMiddleware);
+router.use(rateLimitingMiddleware);
+
+
+
 /**@openapi
 # Add Material to Project API
 paths:
@@ -329,5 +342,6 @@ router.delete('/:projectID/materials/delete/:materialID', async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 });
+router.use(errorHandlerMiddleware);
 
 module.exports = router;

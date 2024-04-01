@@ -51,6 +51,5 @@ const Material = sequelize.define('material', {
     tableName: 'material',
     timestamps: false
 });
-//Material.belongsToMany(Project, { through: ProjectMaterial, foreignKey: 'materialID' });
 
 module.exports = Material;
